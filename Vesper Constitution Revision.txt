@@ -1,0 +1,1436 @@
+Vesper Constitution
+Revision 2.0 — Foundational Product and Engineering Principles
+Status: Approved
+Project: Vesper
+Revision: 2.0
+
+This constitution consolidates Vesper's original principles and requirements with the approved changes: the independent cross-platform Vesper Glass Engine, the redesigned versioned lyrics system, Vesper Lyrics Intelligence, and the revised product and engineering roadmap.
+
+It is the project's governing specification. Implementation decisions should respect these principles unless the constitution is deliberately revised.
+
+Vesper Constitution
+Revision 2.0
+FOUNDATIONAL PRODUCT SPECIFICATION · APPROVED
+
+Preamble — What Vesper Is
+Vesper is an independent, offline-first, cross-platform music player built around ownership, portability, reliability, and a distinctive visual identity.
+
+Its purpose is to provide a sophisticated music-listening experience without depending on streaming services, mandatory accounts, cloud infrastructure, or proprietary platform-specific visual systems.
+
+Vesper is more than an interface for playing audio files. It is a complete local music environment, with its own filesystem organization, portable user data, playback system, visual rendering engine, lyrics format, integrated editor, and optional local intelligence.
+
+Vesper is designed to work on:
+- Linux
+- Windows
+- Android
+- iOS
+The project is developed primarily on Linux, using Flutter and Dart. Its architecture must preserve compatibility with all supported platforms without making platform-specific frameworks the foundation of the product.
+
+The application is developed independently, with long-term maintainability and the practical constraints of a solo developer in mind.
+
+Article I — Fundamental Principles
+1.1. Offline-first operation
+Vesper must work entirely offline.
+
+The following must never be mandatory:
+- User accounts.
+- Cloud services.
+- Subscriptions.
+- Remote APIs.
+- Streaming services.
+- Permanent internet connectivity.
+- External servers.
+An internet connection may be used for optional activities, such as obtaining application updates or downloading optional AI models, but the core application must remain fully functional without it.
+1.2. User ownership
+The user owns their music and personal data.
+
+Vesper must not make the user's library dependent on proprietary databases, inaccessible application storage, or remote infrastructure.
+
+Music, playlists, lyrics, and persistent application data must remain locally accessible.
+1.3. Filesystem authority
+The filesystem is the ultimate source of truth for the music library.
+
+The application may maintain databases, caches, indexes, and metadata to improve performance and usability, but these must never override authoritative filesystem information.
+1.4. Portability
+The user's music collection and portable application state must be transferable between supported devices.
+
+Copying the Vesper root directory to another compatible device must be sufficient to reconstruct the meaningful portable state of the application.
+1.5. Playback reliability
+Audio playback is the foundational function of Vesper.
+
+No optional subsystem may compromise the reliability of basic playback.
+
+Visual effects, lyrics, AI processing, waveform visualization, and other advanced features must remain independent of the playback system.
+1.6. Cross-platform identity
+Vesper must maintain a recognizable and consistent identity across platforms.
+
+Platform-specific implementations are acceptable when required for operating-system integration, hardware access, or performance. They must not unnecessarily fragment the product's fundamental behavior or visual identity.
+1.7. Long-term maintainability
+Vesper must remain understandable and maintainable as it grows.
+
+The project must avoid unnecessary abstraction, premature optimization, excessive dependencies, and architectural complexity without practical value.
+
+However, foundational systems must be designed carefully enough to accommodate the project's long-term ambitions.
+
+Article II — Technology and Development Environment
+2.1. Technology stack
+The established development stack is:
+Component	Technology
+Application framework	Flutter
+Programming language	Dart
+Primary graphics technology	To be evaluated within Flutter's rendering capabilities
+Local structured database	SQLite, accessed through Drift
+Audio playback	Mature audio libraries and platform integrations
+Version control	Git
+Repository hosting	GitHub
+CI/CD	GitHub Actions
+Development environment	Debian 13
+
+Dependencies must be evaluated before adoption, particularly regarding platform compatibility, licensing, maintenance, performance, and offline operation.
+2.2. Platform development priorities
+Development takes place primarily on Debian 13.
+
+Linux and Android development should be prioritized because they can be developed and tested without access to macOS or Xcode.
+
+Windows and iOS compatibility must nevertheless remain architectural requirements.
+
+Official iOS compilation, signing, and distribution require an appropriate macOS/Xcode environment. The project must use suitable external CI infrastructure when necessary.
+
+The absence of a local macOS development environment must not unnecessarily block platform-independent implementation.
+2.3. Dependency philosophy
+Vesper should integrate mature technologies when they solve generic problems reliably.
+
+Custom technology should be developed when it provides a meaningful advantage or represents a fundamental part of Vesper's identity.
+
+Examples:
+- Develop the Vesper Glass Engine rather than depending entirely on platform-native Liquid Glass implementations.
+- Develop the Vesper lyrics format and integrated editor.
+- Integrate established audio decoding libraries rather than implementing audio codecs from scratch.
+- Integrate and adapt existing AI models rather than attempting to train a complete singing-recognition model from scratch.
+
+Article III — Filesystem Architecture
+3.1. The filesystem as the library's authority
+The filesystem determines the identity and organization of the music library.
+
+The application must derive authoritative information from the actual directory structure and filenames.
+
+Embedded metadata is supplementary. It may provide information that is not represented in the filesystem, but it cannot override filesystem-defined identity.
+
+The database is an index and structured representation of the library, not its authority.
+3.2. Root directory
+The user selects a root directory containing the Vesper music collection.
+
+The root directory is the fundamental portable unit of the user's library.
+
+Its conceptual organization is:
+Vesper Root/
+│
+├── Album/
+│   ├── Artist - Album Name/
+│   │   ├── Artist - 01 - Song Name.flac
+│   │   ├── Artist - 02 - Song Name.flac
+│   │   └── cover.png
+│   │
+│   └── Another Artist - Another Album/
+│       └── ...
+│
+├── Playlist/
+│   └── ...
+│
+├── Artwork/
+│   └── ...
+│
+├── Lyrics/
+│   └── ...
+│
+├── Vesper/
+│   └── ...
+│
+└── Artist - Song Name.flac
+
+
+This is a conceptual representation of the organization, not a requirement that every directory must exist when the root is created.
+3.3. Album organization
+Album directories must be placed directly inside Album/.
+
+The directory name must follow:
+Artist - Album Name
+
+
+Album directories must not contain artist subdirectories.
+
+The album directory determines the album artist and album name.
+
+Individual track filenames determine the identity of each track.
+3.4. Audio filename convention
+Every audio file inside the Vesper root must follow:
+Artist Name - Track Number - Song Title.extension
+
+
+This convention applies to both album tracks and loose tracks.
+
+For example:
+Radiohead - 01 - Everything In Its Right Place.flac
+
+
+The filename determines:
+- Track artist.
+- Track number, when applicable.
+- Song title.
+The extension identifies the audio format.
+
+The parser must not silently invent missing information or make unreliable guesses when a filename violates the expected structure.
+
+Invalid or ambiguous files should be reported to the user for resolution.
+3.5. Track numbers
+An album must never contain two tracks with the same track number.
+
+When a conflict is detected, Vesper must not silently choose one track or overwrite another.
+
+The user must be presented with appropriate resolution options:
+- Reorder tracks by changing their filenames.
+- Replace the conflicting track.
+- Cancel the operation.
+Filesystem mutations must be handled safely, with collision detection and verification.
+3.6. Loose tracks
+Audio files placed directly inside the root directory are considered loose tracks.
+
+They are not members of an album merely because they share an artist or metadata with an album.
+
+Their identity is determined by their filenames.
+3.7. Album artwork
+Album artwork must be stored inside its corresponding album directory.
+
+The recognized artwork filename is:
+cover.png
+cover.jpg
+cover.jpeg
+
+
+The filesystem artwork takes precedence over embedded artwork.
+
+Embedded artwork may be used as supplementary information or a fallback when appropriate, but it must not silently override the user's filesystem organization.
+3.8. Loose-track artwork
+Artwork for loose tracks must be stored in the root's Artwork/ directory.
+
+The artwork filename must correspond to the audio file's filename stem.
+
+For example:
+Root/
+├── Artist - Song Name.flac
+└── Artwork/
+    └── Artist - Song Name.jpg
+
+
+3.9. Lyrics organization
+Lyrics must be stored inside the root's Lyrics/ directory.
+
+Each lyrics file must be a plain-text .txt file whose name corresponds exactly to the associated audio filename, excluding its audio extension.
+
+For example:
+Artist - Song Name.flac
+Lyrics/
+└── Artist - Song Name.txt
+
+
+Lyrics are filesystem-backed and must not require a separate authoritative database.
+
+The detailed lyrics format is defined in Article IX.
+3.10. Embedded metadata
+Embedded audio metadata may supplement the filesystem with information such as:
+- Duration.
+- Genre.
+- Release year.
+- Disc number.
+- ReplayGain information.
+- Codec.
+- Bitrate.
+- Sample rate.
+- Embedded artwork.
+The application may use this information for display, filtering, sorting, and playback configuration.
+
+It must never override filesystem-defined track identity, album membership, album artist, or album name.
+
+Article IV — File Identity and Filesystem Integrity
+4.1. Logical identity
+A track's logical identity must not depend exclusively on its filename or path.
+
+Renaming or moving a file should not automatically cause Vesper to treat it as an entirely new track when there is sufficient evidence that it is the same underlying music.
+
+The application should preserve meaningful user state when identity can be established confidently.
+4.2. Conservative identity matching
+Identity resolution must be conservative.
+
+A false-positive match, in which two different tracks are incorrectly treated as the same track, is more damaging than leaving a track unresolved.
+
+When identity cannot be established confidently, Vesper should request resolution or treat the relationship as uncertain rather than silently merging records.
+4.3. Filesystem watcher
+Filesystem watcher events are observations of changes, not authoritative declarations of user intent.
+
+Vesper must not assume that every event represents a completed operation.
+
+The application should account for:
+- Multiple events generated by one operation.
+- Incomplete file copies.
+- Temporary files.
+- Files still being written.
+- Filesystem event ordering.
+- Files temporarily unavailable.
+- Filesystem watcher limitations.
+Events should be debounced and coalesced where appropriate.
+
+Stability checks should be performed before processing files that may still be changing.
+4.4. Full reconciliation
+A full filesystem reconciliation is the fundamental correctness mechanism.
+
+Watchers may improve responsiveness, but they must not become the only mechanism responsible for keeping the library consistent.
+
+Vesper must periodically or explicitly compare its structured representation against the actual filesystem.
+4.5. Partial operations and missing files
+The absence of a file must not immediately be interpreted as permanent deletion.
+
+A file may temporarily be unavailable because of:
+- An incomplete copy.
+- A disconnected external drive.
+- A permission problem.
+- A temporary filesystem error.
+- An interrupted synchronization operation.
+Vesper must distinguish confirmed deletion from temporary unavailability whenever possible.
+4.6. Safe filesystem mutations
+Operations that modify the user's filesystem must be designed to avoid data loss.
+
+The preferred process is:
+1. Validate the requested operation.
+2. Detect conflicts.
+3. Prepare the required changes.
+4. Perform mutations using temporary names where appropriate.
+5. Verify the resulting filesystem state.
+6. Commit corresponding structured state.
+7. Recover or roll back when an operation fails.
+The database must never claim that a filesystem operation succeeded before the filesystem has actually been verified.
+
+Article V — Portable State and Synchronization
+5.1. Portable root
+The complete Vesper root directory is the supported portable synchronization unit.
+
+Copying this directory to another device must preserve the meaningful portable state of the library.
+
+The application must not require a remote service to reconstruct this state.
+5.2. Persistent application data
+Persistent Vesper data must be stored inside the root's Vesper/ directory.
+
+This includes structured data and user state that must travel with the library.
+
+Temporary runtime caches, disposable processing data, and other device-specific technical resources may be stored outside the root.
+
+These temporary resources must be reconstructible and must not become essential to the portability of the library.
+5.3. SQLite and Drift
+Vesper may use SQLite through Drift to maintain structured information.
+
+The database can represent:
+- Tracks.
+- Albums.
+- Playlists.
+- Labels or classifications.
+- Playback-related state.
+- User preferences.
+- Logical track identities.
+- Listening history.
+- Other structured information.
+However, the database must never become the authoritative source for facts defined by the filesystem.
+
+The application must be capable of rebuilding relevant database information from the filesystem when necessary.
+5.4. Global and device-specific state
+Persistent state must be divided into two categories.
+
+Global state belongs to the portable music collection and should travel between devices.
+
+Examples include:
+- Favorites.
+- Vesper-created playlists.
+- Custom ordering.
+- Portable configuration.
+- Other library-wide user preferences.
+Device-specific state belongs to a particular physical device.
+
+Examples include:
+- Listening history.
+- Play counts.
+- Last-played information.
+- Current queue.
+- Playback position.
+- Device-specific preferences.
+This distinction prevents the state of one physical device from being confused with another.
+5.5. Device identity
+Every physical device must have an immutable device identifier.
+
+The user may change the device's display name, but this must not change its identity.
+
+Copying the Vesper root directory to a new device must not cause that device to impersonate the original device.
+
+Each device must maintain its own device-specific state.
+5.6. Synchronization rules
+Full root-directory copying is the supported synchronization mechanism.
+
+The synchronization model is explicit and file-based rather than dependent on an always-connected synchronization service.
+
+The following rules apply:
+- Global state from the synchronization source takes precedence during directional synchronization.
+- Device-specific state files coexist.
+- When the same device identifier exists on both sides, the source version takes precedence.
+- A new physical device must receive its own identity.
+- Partial copies must be tolerated.
+- Missing files must not automatically be interpreted as deletion during incomplete synchronization.
+Vesper must prioritize predictable and understandable synchronization behavior over hidden automatic merging.
+
+Article VI — Database, Runtime Data, and Internal Architecture
+6.1. Database responsibility
+The database exists to provide efficient structured access to library and application information.
+
+It is not a replacement for the filesystem.
+
+It must be possible to reconstruct filesystem-derived facts from the actual files and directory structure.
+6.2. Database consistency
+Database updates and filesystem operations must be coordinated carefully.
+
+The application must avoid inconsistent states in which the database describes a filesystem operation that failed.
+
+When recovery is necessary, the filesystem remains authoritative.
+6.3. Disposable runtime data
+Runtime caches and temporary processing files must remain disposable.
+
+Deleting them must not destroy the user's music collection, lyrics, playlists, or portable state.
+
+The application should be able to reconstruct them when needed.
+6.4. Layered architecture
+The application should maintain a clear separation of responsibilities.
+
+The established conceptual layers are:
+1. Presentation: user interface and visual interaction.
+2. Application: use cases and coordination of operations.
+3. Domain: business rules and core entities.
+4. Infrastructure: filesystem access, databases, audio integrations, platform APIs, and other external systems.
+The architecture must be modular without introducing unnecessary complexity.
+
+Article VII — Audio Playback
+7.1. Foundational subsystem
+Audio playback is the central function of Vesper.
+
+It must remain reliable regardless of whether optional visual, lyrics, or AI features are available.
+
+The playback subsystem must not depend on the Glass Engine, lyrics parser, lyrics editor, or AI inference infrastructure.
+7.2. Audio formats
+Vesper should support common compressed and lossless audio formats through mature and reliable audio libraries.
+
+The application should not implement audio codecs from scratch unless there is an exceptional technical justification.
+7.3. Playback features
+The playback system must support:
+- Play and pause.
+- Previous and next track.
+- Seeking.
+- Queue management.
+- Shuffle.
+- Repeat.
+- Resume playback position.
+- Gapless playback.
+- ReplayGain.
+- Background playback where supported by the platform.
+- Optional crossfade, provided it can be implemented reliably.
+7.4. Queue management
+The queue must support:
+- Adding tracks.
+- Reordering tracks.
+- Drag-and-drop reordering where supported.
+- Playing a track next.
+- Adding tracks to the end of the queue.
+- Shuffle behavior.
+- Repeat behavior.
+The queue is device-specific state.
+
+It must not be treated as a permanent replacement for the user's filesystem organization or playlists.
+7.5. Resume behavior
+Vesper should preserve meaningful playback position information.
+
+When the application is restarted, it should be capable of restoring the last relevant playback state, subject to the availability of the underlying audio file.
+7.6. Background playback
+The application must support background audio playback on platforms that provide the necessary operating-system facilities.
+
+Platform-specific integrations may be used for:
+- Audio sessions.
+- Lock-screen controls.
+- Media notifications.
+- Background execution.
+- Audio focus and interruption handling.
+These integrations must not alter Vesper's platform-independent playback rules.
+7.7. Deleted or unavailable tracks
+If the currently playing file is deleted or becomes unavailable, Vesper must stop playback and inform the user.
+
+It must not silently substitute a different track.
+
+The application must not pretend that a missing file is still available merely because its metadata remains in the database.
+
+Article VIII — Vesper Glass Engine
+8.1. Vision
+Vesper must have its own independent cross-platform implementation of the visual language commonly associated with Apple's Liquid Glass.
+
+The purpose is to reproduce the essential optical and material characteristics of sophisticated glass interfaces without depending on Apple's native visual components.
+
+The same fundamental Vesper Glass implementation must work across:
+- Linux.
+- Windows.
+- Android.
+- iOS.
+The visual identity of Vesper must not depend on the operating system on which it runs.
+
+The engine must be a genuine material-rendering system, not merely a collection of transparent widgets with blurred backgrounds.
+8.2. Independence from native visual frameworks
+The Vesper Glass Engine replaces the previous proposal of relying on native Apple Liquid Glass components for the iOS visual experience.
+
+Native platform APIs may still be used for operating-system integration or performance where appropriate, but the fundamental glass material system must remain Vesper's own implementation.
+8.3. Material characteristics
+The engine should support the following visual properties.
+A. Translucency
+- Transparent and semitransparent materials.
+- Visibility of backgrounds through glass surfaces.
+- Controlled opacity.
+- Adjustable saturation.
+- Adjustable contrast.
+- Adjustable brightness.
+B. Background diffusion
+- Gaussian blur or alternative blur algorithms.
+- Adjustable blur intensity.
+- Frosted-glass appearance.
+- Efficient background processing.
+- Shared background processing where appropriate.
+C. Refraction
+- Distortion of the background through glass surfaces.
+- Edge-dependent distortion.
+- Curved optical characteristics.
+- More sophisticated refraction for higher-quality profiles.
+D. Specular reflections
+- Directional highlights.
+- Reflections along curved edges.
+- Subtle surface lighting.
+- Dynamic highlights when appropriate.
+E. Material depth
+- Internal lighting.
+- Subtle gradients.
+- Inner shadows.
+- Luminous borders.
+- Simulated surface thickness.
+- Rounded optical edges.
+These characteristics must work together as a coherent material system.
+8.4. Engine responsibilities
+The Glass Engine must internally manage:
+- Material properties.
+- Background capture.
+- Blur.
+- Refraction.
+- Lighting.
+- Reflections.
+- Borders.
+- Shadows.
+- Geometry.
+- Caching.
+- Rendering quality.
+- Graphics optimization.
+The rest of the interface should request materials and define their content rather than independently implementing the optical effects.
+
+Conceptually:
+VesperGlass(
+  material: GlassMaterial.navigationBar,
+  child: NavigationBarContent(),
+)
+
+
+Or:
+VesperGlass(
+  material: GlassMaterial.floatingPanel,
+  child: AlbumInformation(),
+)
+
+
+These examples illustrate the intended architecture. They are not finalized API requirements.
+8.5. Rendering technology
+The implementation must be based on research into Flutter's actual rendering capabilities.
+
+Technologies and APIs to investigate include:
+- Impeller.
+- Fragment shaders.
+- GLSL.
+- CustomPainter.
+- BackdropFilter.
+- BackdropGroup.
+- BackdropKey.
+- GPU-accelerated rendering.
+Fragment shaders are particularly promising for effects such as:
+- Background sampling.
+- Texture-coordinate distortion.
+- Refraction.
+- Color and brightness modification.
+- Directional reflections.
+- Final material composition.
+However, compatibility and behavior must be verified on the actual rendering backends and supported platforms.
+
+The project must not assume that every effect behaves identically across Skia and Impeller.
+8.6. Rendering quality profiles
+The engine must expose three conceptual quality profiles.
+
+They are profiles within one engine, not separate implementations.
+Glass Lite
+Optimized for weaker hardware.
+- Translucency.
+- Moderate blur.
+- Luminous borders.
+- Gradients.
+- Shadows.
+- No expensive refraction.
+Glass Standard
+Default Vesper glass experience.
+- Everything included in Glass Lite.
+- Directional reflections.
+- Moderate refraction.
+- Internal lighting.
+- Subtle optical distortion.
+Glass Ultra
+Maximum visual quality.
+- More sophisticated refraction.
+- Advanced edge distortion.
+- Dynamic reflections.
+- More elaborate lighting.
+- Advanced optical animations.
+The engine should allow manual quality selection and may eventually adapt its rendering quality to hardware capabilities.
+8.7. Opaque interface
+The glass interface must be optional.
+
+Users must be able to choose between the Glass experience and a more traditional opaque interface.
+
+The opaque interface must be a first-class presentation mode, not an afterthought or a broken fallback.
+
+It must preserve the complete functionality and usability of Vesper.
+8.8. Performance requirements
+Performance is a fundamental requirement.
+
+The engine must remain usable on relatively weak hardware.
+
+The implementation should avoid:
+- Redundant background captures.
+- Repeated unnecessary blur operations.
+- Excessive GPU processing.
+- Unnecessary memory allocations.
+- Uncontrolled rendering complexity.
+- Unnecessary shader recompilation.
+The following techniques should be investigated:
+- Shared backdrop processing.
+- Reduced-resolution blur.
+- Caching.
+- Geometry reuse.
+- Processing only relevant regions.
+- Shader compilation and warm-up.
+- Adaptive rendering quality.
+- Efficient clipping.
+- GPU and memory usage monitoring.
+A preliminary objective is to maintain approximately 60 FPS in representative interface scenes on modest hardware.
+
+This is a benchmark target to validate, not a universal performance guarantee.
+8.9. Failure isolation
+The application must remain usable if advanced rendering features are unavailable.
+
+Examples:
+- If advanced GPU effects are unsupported, Glass Lite should remain available where possible.
+- If a shader fails, the engine should use a safe fallback.
+- If Glass is disabled, the opaque interface must continue functioning.
+- A graphics failure must never prevent basic audio playback.
+
+Article IX — Vesper Lyrics
+9.1. Purpose
+Vesper must include a native lyrics system based on local, human-readable files.
+
+The system must integrate with the existing filesystem organization.
+
+It must not require external lyrics databases, cloud services, or AI models.
+
+Users must always be able to create, edit, and display lyrics manually.
+9.2. Filesystem authority
+Lyrics are stored in plain-text .txt files inside the root's Lyrics/ directory.
+
+Their filenames correspond exactly to the associated audio filenames, excluding the audio extension.
+
+The filesystem remains the source of truth.
+
+The database may index lyrics information for convenience, but it must never become their authoritative storage.
+9.3. Display modes
+Vesper must support three lyrics display modes.
+Mode 1 — Static
+Static lyrics are displayed without synchronization.
+
+Requirements:
+- The complete lyrics text remains visible.
+- No line or word is progressively highlighted.
+- No timestamps are required.
+- The user can navigate through the lyrics while listening.
+This mode represents a readable transcript.
+Mode 2 — Standard
+Standard lyrics are synchronized line by line.
+
+Requirements:
+- Each line has one timestamp.
+- When the timestamp is reached, the entire corresponding line becomes highlighted.
+- The display follows the current playback position.
+- Synchronization should provide an experience comparable to conventional line-synchronized lyrics systems.
+Only one timestamp per line is necessary for the Standard display.
+Mode 3 — Dynamic
+Dynamic lyrics are synchronized at word level.
+
+Requirements:
+- Individual words have timestamps.
+- Words become highlighted progressively as they are sung.
+- Transitions between words may be animated.
+- The experience should be visually sophisticated and fluid.
+Word-level synchronization is the initial implementation requirement.
+
+Syllable-level synchronization is a possible future enhancement, not a requirement for the initial Dynamic implementation.
+
+Dynamic mode remains optional because producing accurate word-level timestamps requires substantially more effort than producing line-level timestamps.
+9.4. Versioned lyrics format
+The lyrics file must remain human-readable and editable using ordinary text editors.
+
+It must support:
+- Static lyrics.
+- Standard line synchronization.
+- Dynamic word synchronization.
+- Future format versions.
+- Backward compatibility where practical.
+- Preservation of timing information when changing display modes.
+- A simple format without unnecessary complexity.
+The exact syntax must be finalized during the lyrics architecture phase.
+
+The following examples illustrate the proposed format.
+
+Static:
+[format: vesper-lyrics-1]
+[mode: static]
+
+I found a love
+For me
+Darling, just dive right in
+
+
+Standard:
+[format: vesper-lyrics-1]
+[mode: standard]
+
+<00:12.40>I found a love
+<00:15.20>For me
+<00:18.50>Darling, just dive right in
+
+
+Dynamic:
+[format: vesper-lyrics-1]
+[mode: dynamic]
+
+<00:12.40>I <00:12.65>found <00:13.10>a <00:13.30>love
+<00:15.20>For <00:15.55>me
+
+
+These are conceptual examples, not a finalized formal grammar.
+9.5. Preservation of timestamps
+The format must preserve the richest available synchronization information independently of the currently selected display mode.
+
+Changing from Dynamic to Standard must not destroy existing word-level timestamps.
+
+Where appropriate, Vesper should derive line-level timestamps from the first word timestamp of each line.
+
+Changing back to Dynamic must preserve the original word-level timing information.
+
+The display mode must not cause irreversible loss of synchronization data.
+9.6. Edge cases
+The formal lyrics format must consider:
+- Pauses.
+- Missing timestamps.
+- Repeated sections.
+- Instrumental passages.
+- Empty or partially synchronized lines.
+- Multiple words and punctuation.
+- Lyrics with unusual line structures.
+- Future format extensions.
+These details must be resolved before the format becomes a stable implementation contract.
+9.7. Playback synchronization
+Playback position is the authority for lyrics synchronization.
+
+The lyrics display must respond correctly to:
+- Seeking.
+- Pausing.
+- Resuming.
+- Track changes.
+- Playback position updates.
+When playback position changes, the visible lyrics state must be recomputed rather than assuming that every preceding timestamp event was observed.
+
+This ensures correct behavior after seeking or other discontinuous playback operations.
+9.8. Visual presentation
+The lyrics interface should provide a clear visual distinction between:
+- The currently active line or word.
+- Upcoming lyrics.
+- Previously displayed lyrics.
+Upcoming lyrics may be displayed with reduced emphasis.
+
+Dynamic synchronization should progressively highlight the active words.
+
+The visual presentation should remain consistent with the selected Vesper theme and material system.
+
+Article X — Integrated Lyrics Editor
+10.1. Purpose
+Vesper must include an integrated lyrics editor.
+
+Users should be able to create, edit, synchronize, preview, and save lyrics without leaving the application.
+
+Manual lyrics creation and editing must never require AI.
+10.2. User workflow
+The intended workflow is:
+1. The user opens the currently playing song.
+2. Opens its three-dot menu.
+3. Selects Edit Lyrics.
+4. Vesper checks whether the associated lyrics file exists.
+5. If necessary, Vesper creates the correctly named .txt file in the correct directory.
+6. The integrated editor opens.
+7. The user edits the lyrics and timestamps.
+8. The user previews synchronization while the song plays.
+9. Changes are saved directly to the filesystem.
+The editor must handle file creation and saving according to the filesystem rules established in this constitution.
+10.3. Editing capabilities
+The editor must support:
+- Editing lyrics text.
+- Changing the lyrics display mode.
+- Creating timestamps.
+- Removing timestamps.
+- Adjusting existing timestamps.
+- Editing individual word timestamps.
+- Editing line-level timestamps.
+- Previewing synchronization in real time.
+- Playing and pausing the song.
+- Seeking through the song.
+- Saving changes to the correct filesystem location.
+10.4. Playback-based synchronization
+The editor must provide an intuitive way to assign timestamps based on the current playback position.
+
+A typical workflow:
+1. Select a line or word.
+2. Play the song.
+3. Pause when the selected element begins.
+4. Assign the current playback position as its timestamp.
+5. Fine-tune the timestamp if necessary.
+6. Replay the relevant section to verify synchronization.
+The system must support millisecond-level adjustments.
+10.5. Batch timestamp adjustment
+The editor must support shifting multiple timestamps simultaneously.
+
+Examples:
+- Shift selected timestamps forward by 100 ms.
+- Shift selected timestamps backward by 100 ms.
+This is useful when an entire section is slightly early or late.
+
+Batch operations must preserve valid timestamp ordering and must not accidentally destroy unrelated synchronization data.
+10.6. Editing interfaces
+Two complementary editing approaches should be investigated.
+
+Text-based editor:
+- Lyrics displayed as editable text.
+- Individual timestamps accessible.
+- Lines and words selectable.
+- Synchronization markers adjustable.
+Timeline-based editor:
+- Audio waveform visualization.
+- Temporal markers.
+- Visual positioning of timestamps.
+- Easier identification of phrase boundaries.
+The waveform is intended to assist manual editing.
+
+It must not be treated as an automatic recognition system for individual sung words.
+10.7. Platform usability
+The editor must remain usable on both mobile and desktop interfaces.
+
+The presentation may adapt to available screen space and input methods, but its fundamental editing capabilities must remain consistent.
+
+Article XI — Vesper Lyrics Intelligence
+11.1. Purpose
+Vesper must eventually include an optional local AI subsystem capable of generating lyrics drafts and synchronization timestamps.
+
+This subsystem is called Vesper Lyrics Intelligence.
+
+Its purpose is to reduce the manual effort required to create synchronized lyrics.
+
+It must operate locally and must not require cloud inference, remote APIs, user accounts, subscriptions, or external servers.
+11.2. Optional nature
+AI is an optional authoring assistant.
+
+It is never required to:
+- Play music.
+- Display lyrics.
+- Create lyrics manually.
+- Edit lyrics manually.
+- Synchronize lyrics manually.
+- Use the integrated lyrics editor.
+If no AI model is installed, the rest of Vesper must remain fully functional.
+11.3. Workflow A — Automatic transcription and synchronization
+The user provides an audio file.
+
+The AI subsystem should:
+1. Analyze the audio.
+2. Identify vocal content.
+3. Recognize sung words.
+4. Generate a transcription.
+5. Determine when words occur.
+6. Organize the transcription into lines.
+7. Generate timestamps.
+8. Produce a preliminary Vesper lyrics file.
+The result must be a draft that can be refined through the integrated lyrics editor.
+
+Automatic singing transcription is an ambitious feature and must be treated as an area requiring careful technical evaluation.
+11.4. Workflow B — Synchronization of user-provided lyrics
+The user already possesses the lyrics text.
+
+They provide the text to Vesper Lyrics Intelligence.
+
+The AI subsystem should:
+1. Analyze the supplied audio.
+2. Analyze the supplied lyrics.
+3. Identify the corresponding vocal passages.
+4. Match words to their positions in the audio.
+5. Generate word-level timestamps.
+6. Organize the synchronized result into lines.
+7. Produce a preliminary Vesper lyrics file.
+The original user-provided lyrics must be preserved.
+
+The system's responsibility is synchronization, not rewriting or replacing the supplied text.
+11.5. Development priority
+Synchronizing user-provided lyrics should be prioritized over automatic singing transcription.
+
+Forced alignment of known text is a more focused initial objective than recognizing sung words from arbitrary audio.
+
+The two workflows must remain conceptually separate, even if they eventually share inference infrastructure.
+11.6. Vocal separation
+Vocal separation may be investigated as an optional preprocessing step.
+
+It may help certain recognition or alignment approaches, but it can introduce:
+- Additional processing costs.
+- Increased memory usage.
+- Processing delays.
+- Audio artifacts.
+It should only be introduced if testing demonstrates meaningful improvements.
+
+It must not become a mandatory part of the AI workflow.
+11.7. Local inference architecture
+The AI subsystem must remain independent of the Flutter user interface.
+
+Technologies to investigate include:
+- ONNX Runtime.
+- CTranslate2.
+- Other efficient local inference runtimes.
+The project must not automatically embed an entire Python/PyTorch environment into the application.
+
+Native or otherwise optimized inference backends should be considered where appropriate.
+
+The UI must communicate with the inference subsystem through clearly defined interfaces.
+11.8. Platform-specific considerations
+The eventual AI implementation must account for differences between platforms.
+Platform	Expected strategy
+Linux	Local CPU/GPU inference
+Windows	Local CPU/GPU inference
+Android	Compact models and optimized inference
+iOS	Compact models and optimized inference
+
+Technical evaluation must consider:
+- Memory.
+- GPU availability.
+- CPU performance.
+- Battery consumption.
+- Model size.
+- Runtime compatibility.
+- Platform restrictions.
+11.9. Model management
+AI models must be optional downloads.
+
+Vesper must not force every user to download large models.
+
+Users must receive clear information about:
+- Model size.
+- Hardware requirements.
+- Expected processing limitations.
+- Supported workflows.
+The application should degrade gracefully on weaker hardware.
+11.10. Model storage
+AI models are device-specific resources, not essential parts of the portable music collection.
+
+The architecture should allow models to be installed and managed independently on each device.
+
+Portable configuration may record the user's preferred model, but copying the Vesper music root must not require copying large model files.
+
+A new device must be able to use Vesper without having the same AI models installed.
+
+Article XII — Licensing, Copyright, and Commercial Viability
+12.1. Long-term commercial objective
+Commercial distribution is a potential long-term objective.
+
+Dependencies, models, runtimes, and other third-party components must therefore be evaluated with commercial compatibility in mind.
+12.2. Independent licensing evaluation
+Three licensing layers must be evaluated separately:
+1. Source-code license.
+2. Model-weight license.
+3. Dataset, acoustic-model, and dependency licenses.
+A project's source-code license does not automatically determine the licensing terms of its pretrained weights or datasets.
+12.3. Licensing requirements
+Third-party technologies selected for commercial use must be evaluated for:
+- Permission for commercial use.
+- Permission for modification.
+- Permission for redistribution when bundling is intended.
+- Compatibility with Vesper's distribution model.
+- Absence of mandatory proprietary cloud services.
+- Absence of incompatible licensing obligations.
+- Preservation of relevant third-party notices.
+MIT and BSD-2-Clause are preferred where appropriate, but every component must be individually verified.
+12.4. Licensing inventory
+Vesper must maintain an inventory of relevant third-party licenses.
+
+This inventory must include:
+- Dependencies.
+- Inference runtimes.
+- Models.
+- Model weights.
+- Relevant datasets.
+- Acoustic models.
+- Other redistributable components.
+The inventory must distinguish between source-code licenses and model or dataset licenses.
+12.5. Lyrics copyright
+Vesper must respect copyright restrictions concerning lyrics.
+
+The application must not automatically incorporate or redistribute copyrighted lyrics from external catalogs without appropriate authorization.
+
+Processing user-provided audio and text locally is the preferred approach.
+
+The optional AI subsystem must not become a mechanism for unauthorized collection or distribution of copyrighted lyrics.
+
+Article XIII — Application Interface and Navigation
+13.1. Visual identity
+Vesper must have a distinctive visual identity.
+
+The interface should be polished, coherent, and consistent across platforms.
+
+The Glass Engine is a central part of this identity, but the application must also support a traditional opaque presentation.
+
+The visual system must not compromise readability, accessibility, responsiveness, or playback usability.
+13.2. Navigation structure
+The application is organized around six primary pages:
+1. Home.
+2. Library.
+3. Albums.
+4. Playlists.
+5. Search.
+6. Preferences.
+Navigation must remain understandable and consistent.
+
+Platform-specific adaptations are permitted when required by different screen sizes or interaction conventions.
+13.3. Home
+Home is the default page.
+
+It should prioritize the user's listening activity and provide convenient access to music.
+
+Its contents may include:
+- Recently played tracks.
+- Relevant library shortcuts.
+- Local listening recommendations.
+- Other useful music-related sections.
+A fresh installation must not fabricate listening history or pretend to understand user preferences that have not yet been established.
+13.4. Library
+Library displays the complete music collection.
+
+It must provide useful browsing and sorting capabilities.
+
+Tracks must remain discoverable independently of their album membership.
+13.5. Albums
+Albums displays the album directories recognized by the filesystem.
+
+The album artist, album name, and track membership must follow the filesystem rules.
+
+Album ordering should support:
+- Alphabetical ordering.
+- Persistent custom ordering.
+Custom ordering must be preserved as user state.
+13.6. Playlists
+Vesper must support filesystem-backed playlists and playlists created through Vesper.
+
+Vesper-created playlists must reference logical tracks rather than duplicate audio files.
+
+Playlist data must remain portable and consistent with the filesystem-first philosophy.
+
+The application must not require copying or moving audio files merely to include them in a Vesper-created playlist.
+13.7. Search
+Search must support finding music through relevant library information, including:
+- Track title.
+- Artist.
+- Album.
+- Playlist.
+Search should provide a practical way to find music without requiring the user to navigate manually through the entire library.
+
+Search history may be retained as user state where appropriate.
+13.8. Preferences
+Preferences is responsible for application configuration.
+
+It must provide access to relevant settings, including:
+- Source directory.
+- Library refresh.
+- Appearance.
+- Glass quality.
+- Opaque or Glass interface selection.
+- Playback preferences.
+- Other application configuration.
+The source directory is the foundation of the filesystem library.
+
+The user must be able to refresh or reconcile the library when necessary.
+
+Article XIV — Themes, Artwork, and Visual Behavior
+14.1. Theme modes
+Vesper must support:
+- Light.
+- Dark.
+- System.
+The Light theme should use a clean, predominantly white visual presentation.
+
+The Dark theme should support the selected visual design and may use dynamic artwork-derived colors.
+14.2. Dynamic artwork colors
+Dynamic color extraction from album artwork should be supported in the visual system.
+
+In Dark mode, users should be able to choose between:
+- Off.
+- Subtle.
+- Full.
+These settings determine how strongly the artwork-derived palette influences the interface.
+
+The feature must remain compatible with both Glass and opaque presentation modes.
+14.3. Transitions
+Changes in artwork, themes, and dynamic colors should transition smoothly.
+
+Transitions must not interfere with playback or cause unnecessary rendering work.
+14.4. Artwork authority
+Filesystem artwork takes precedence over embedded artwork.
+
+Dynamic palette extraction must use the artwork selected according to the filesystem rules.
+
+The visual system must not silently select conflicting artwork merely because embedded metadata contains a different image.
+
+Article XV — Cross-Subsystem Architecture and Failure Isolation
+15.1. Independent subsystems
+Vesper must maintain clear conceptual boundaries between its major systems.
+
+The principal subsystems are:
+Vesper UI
+Responsible for:
+- Navigation.
+- Playback interface.
+- Library.
+- Albums.
+- Playlists.
+- Search.
+- Preferences.
+- User interaction.
+Vesper Glass Engine
+Responsible for:
+- Materials.
+- Refraction.
+- Blur.
+- Lighting.
+- Reflections.
+- Rendering quality.
+- Graphics optimization.
+Filesystem and Library
+Responsible for:
+- Directory organization.
+- Filename parsing.
+- Library discovery.
+- Filesystem monitoring.
+- Reconciliation.
+- Safe filesystem operations.
+- Album and track identity.
+Playback
+Responsible for:
+- Audio decoding and playback.
+- Queue.
+- Seeking.
+- Playback state.
+- Audio sessions.
+- Background playback.
+- Playback-related state.
+Vesper Lyrics
+Responsible for:
+- Lyrics format.
+- Parsing.
+- Synchronization.
+- Display modes.
+- Playback integration.
+Vesper Lyrics Editor
+Responsible for:
+- Text editing.
+- Timestamp editing.
+- Waveform visualization.
+- Playback-based synchronization.
+- Preview.
+- Saving.
+Vesper Lyrics Intelligence
+Responsible for:
+- Audio analysis.
+- Automatic transcription.
+- Forced alignment.
+- Model management.
+- Local inference.
+Portable State and Database
+Responsible for:
+- Structured application state.
+- Global and device-specific data.
+- Persistence.
+- Identity records.
+- Portable data coordination.
+These are conceptual subsystem boundaries.
+
+Their actual package and folder organization must follow the existing architecture after inspection. The constitution does not require that every subsystem become a separate process or independently published package.
+15.2. Dependency direction
+Subsystems must communicate through clear interfaces and contracts.
+
+The architecture must avoid unnecessary circular dependencies.
+
+The user interface should coordinate functionality without taking responsibility for the internal implementation of the underlying systems.
+15.3. Failure isolation
+Optional systems must fail independently.
+
+Examples:
+- If no AI model is installed, manual lyrics editing must still work.
+- If AI inference fails, playback must remain unaffected.
+- If advanced GPU effects are unavailable, Glass Lite should remain available where possible.
+- If a shader fails, the application must use a safe fallback.
+- If a lyrics file is malformed, the music player must continue functioning.
+- If the lyrics editor fails, basic playback must remain functional.
+- If the database becomes inconsistent, the filesystem must remain authoritative.
+No optional feature may become a critical dependency for basic music playback.
+15.4. Independent testability
+All major subsystems should be independently testable.
+
+Their interfaces and responsibilities must be sufficiently clear to allow isolated testing without requiring the entire application to run.
+
+Article XVI — Development Philosophy and Quality Standards
+16.1. Solo development
+Vesper is a solo-developed project.
+
+Its architecture must account for the practical limitations of one developer's time and resources.
+
+The project must prioritize:
+- Maintainability.
+- Modularity.
+- Understandable code.
+- Incremental progress.
+- Reusable components.
+- Clear responsibilities.
+- Independent testing.
+16.2. Avoid unnecessary complexity
+Do not introduce abstractions without a concrete purpose.
+
+Do not optimize systems prematurely.
+
+Do not build custom implementations for generic problems that mature technologies already solve reliably.
+
+Do not sacrifice architectural quality when implementing foundational systems.
+16.3. Technical research
+Significant technical decisions must be supported by actual research.
+
+The project must not present unverified assumptions as established technical facts.
+
+Before selecting important technologies, investigate:
+- Official documentation.
+- Actual implementation behavior.
+- Platform compatibility.
+- Performance characteristics.
+- Maintenance status.
+- Licensing.
+- Known limitations.
+This is particularly important for the Glass Engine, lyrics format, local inference runtimes, and singing-related AI models.
+16.4. Measurable acceptance criteria
+Performance-sensitive components must have measurable acceptance criteria.
+
+Examples include:
+- Frame rate and frame pacing.
+- GPU utilization.
+- Memory consumption.
+- Audio playback reliability.
+- Background playback behavior.
+- Filesystem reconciliation correctness.
+- Lyrics synchronization accuracy.
+- AI inference resource consumption.
+Performance objectives must be validated through representative tests rather than assumed from theoretical capabilities.
+16.5. Incremental implementation
+Large systems must be implemented in manageable stages.
+
+The project must not attempt to build every advanced feature simultaneously.
+
+Foundational functionality should be established before dependent systems are introduced.
+
+The implementation order must minimize architectural rework while allowing early validation of the project's largest technical risks.
+16.6. Developer participation
+The development process must preserve the developer's active participation and understanding.
+
+The goal is not simply to produce working code as quickly as possible.
+
+The developer must understand the architecture, the responsibilities of each component, and the reasons behind significant implementation decisions.
+
+Article XVII — Product Milestones
+The following four product milestones define Vesper's long-term evolution.
+
+They are conceptual product stages, not fixed release deadlines.
+Vesper 1.0 — Solid Music Player
+Foundational product
+The first major objective is a reliable, fully usable music player.
+
+Priorities:
+- Reliable audio playback.
+- Filesystem integration.
+- Music library.
+- Albums.
+- Playlists.
+- Queue management.
+- Core navigation.
+- Portable structured state.
+- Basic lyrics support.
+- Static lyrics.
+- Standard line-synchronized lyrics.
+- Stable cross-platform architecture.
+The fundamental offline-first philosophy and filesystem rules must be fully respected.
+Vesper 2.0 — Advanced Visual Experience
+Visual and creative expansion
+The second milestone introduces the advanced visual and lyrics experience.
+
+Priorities:
+- Vesper Glass Engine.
+- Glass Lite.
+- Glass Standard.
+- Glass Ultra.
+- Opaque interface option.
+- Integrated lyrics editor.
+- Word-level synchronization.
+- Dynamic lyrics.
+- Advanced lyrics animations.
+- Visual refinement.
+Vesper 3.0 — Local Intelligence
+Intelligence expansion
+The third milestone introduces optional local AI.
+
+Priorities:
+- Local inference infrastructure.
+- Model management.
+- Forced alignment.
+- Automatic timestamp generation.
+- Synchronization of user-provided lyrics.
+- Experimental automatic singing transcription.
+- Optional model downloads.
+- Platform-specific inference optimization.
+The AI subsystem must remain optional and independent of basic playback.
+Vesper 4.0 — Commercial-Quality Product
+The fourth milestone focuses on reliability, optimization, and distribution.
+
+Priorities:
+- Extensive testing.
+- Performance optimization.
+- Cross-platform consistency.
+- Memory optimization.
+- Battery optimization.
+- Installation and distribution.
+- Documentation.
+- Licensing compliance.
+- Reliability refinement.
+- User experience refinement.
+These milestones describe the intended evolution of Vesper rather than imposing fixed deadlines.
+
+Article XVIII — Engineering Roadmap
+The product milestones above describe what Vesper should become. The engineering roadmap defines the order in which its major systems should be developed.
+
+The following sequence is the approved planning structure. Individual phases may be adjusted as implementation reveals new technical requirements.
+Phase	System or objective
+0	Architecture and specification
+1	Project foundation
+2	Filesystem engine
+3	Portable database and state
+4	Library, albums, and playlists
+5	Audio playback and queue
+6	Background and mobile playback
+7	Basic lyrics parser and display
+8	Core UI and visual identity
+9	Vesper Glass research and implementation
+10	Integrated lyrics editor
+11	Dynamic lyrics and advanced synchronization
+12	Local inference infrastructure
+13	Forced alignment and transcription
+14	Platform optimization and model management
+15	Reliability, performance, and distribution
+
+18.1. Early validation of the Glass Engine
+Although the full Glass Engine belongs to the advanced visual milestone, its technical risks must be investigated early.
+
+A small rendering prototype should be developed during the foundational stages.
+
+It should investigate:
+- Background capture.
+- Blur.
+- Translucency.
+- Refraction.
+- Reflections.
+- Shader behavior.
+- Platform compatibility.
+- Performance on modest hardware.
+This prototype exists to validate feasibility and architecture, not to prematurely implement the complete visual system.
+18.2. Lyrics format before lyrics implementation
+The versioned lyrics format must be specified before implementing the full lyrics parser.
+
+Its internal representation must preserve the richest available timing information independently of the selected display mode.
+
+The parser, editor, and playback synchronization system must share a coherent understanding of the format.
+18.3. Manual lyrics before AI
+The lyrics parser, display, and integrated editor must work without AI.
+
+Local inference infrastructure and model integration should be developed only after the manual lyrics workflow is functional and stable.
+18.4. Forced alignment before automatic transcription
+The synchronization of user-provided lyrics should be prioritized as the initial AI workflow.
+
+Automatic singing transcription should remain a separate, more experimental objective.
+18.5. Playback independence
+The playback subsystem must remain independent throughout the entire roadmap.
+
+No phase may make basic audio playback dependent on the successful initialization of the Glass Engine, lyrics editor, or AI infrastructure.
+
+Article XIX — Final Governing Rules
+The following principles take precedence when evaluating architectural or product decisions.
+1. The filesystem is the authority for the music library.
+2. The user owns their music and personal data.
+3. Vesper must remain fully functional offline.
+4. The complete Vesper root is the portable synchronization unit.
+5. Structured databases supplement the filesystem; they do not replace it.
+6. Device-specific state must remain distinct from global portable state.
+7. Basic playback must never depend on optional subsystems.
+8. Vesper Glass must be an independent cross-platform rendering engine.
+9. Native Apple Liquid Glass components must not be the foundation of Vesper's visual identity.
+10. The opaque interface must remain a complete and supported alternative to Glass.
+11. Lyrics must remain human-readable, local, filesystem-backed, and manually editable.
+12. The lyrics format must preserve detailed synchronization data when display modes change.
+13. The integrated lyrics editor must work without AI.
+14. Vesper Lyrics Intelligence must run locally and remain optional.
+15. AI models and their licensing must be evaluated independently from their source-code runtimes.
+16. Optional subsystems must fail independently without compromising playback.
+17. Performance requirements must be validated through testing.
+18. Technical decisions must be supported by documentation and actual implementation research.
+19. Custom technology should be developed where it provides meaningful value; mature technologies should be integrated where appropriate.
+20. The architecture must remain understandable and maintainable for a solo developer.
+
+Closing Declaration
+Vesper is intended to be an independent music environment built around a simple principle: the user's music and data should belong to the user, remain accessible, and work without dependence on external services.
+
+Its filesystem is its foundation. Its playback system is its central function. Its visual engine gives it an independent identity. Its lyrics system gives the user control over the relationship between music and text. Its local intelligence expands what the application can do without taking control away from the user.
+
+These systems must coexist without compromising one another.
+
+Vesper should be sophisticated without becoming unnecessarily complicated, visually ambitious without sacrificing performance, intelligent without depending on the cloud, and portable without surrendering ownership of its data.
+
+The ultimate objective is to build a sophisticated, independent, fully offline, cross-platform music player with its own visual rendering engine and intelligent local features, while preserving its original filesystem-first philosophy.
